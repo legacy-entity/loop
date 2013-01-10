@@ -1,0 +1,10 @@
+{
+  "name": "loop",
+  "description": "loop system",  
+  "version": "0.0.1",
+  "keywords": ["game", "loop", "system"],
+  "dependencies": {
+    "component/raf": "*"
+  },
+  "scripts": ["index.js"]
+}
