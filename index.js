@@ -13,7 +13,9 @@ var raf = require('raf')
  * @api public
  */
 
-module.exports = function (dt) {
+module.exports = function (opts) {
+  opts = opts || {}
+  opts.dt = opts.dt || 1000/60
 
   /**
    * Loop system.
@@ -28,8 +30,7 @@ module.exports = function (dt) {
    */
 
   loop.init = function () {
-    this.dt = dt || 1000/60
-    this.maxDiff = this.dt * 5
+    this.maxDiff = opts.dt * 5
     this.reset()
   }
 
@@ -140,8 +141,8 @@ module.exports = function (dt) {
    */
 
   loop.overflow = function () {
-    if (this.accumulator >= this.dt) {
-      this.accumulator -= this.dt
+    if (this.accumulator >= opts.dt) {
+      this.accumulator -= opts.dt
       return true
     }
     return false
@@ -156,7 +157,7 @@ module.exports = function (dt) {
    */
 
   loop.alpha = function () {
-    return this.accumulator / this.dt
+    return this.accumulator / opts.dt
   }
 
   return loop
