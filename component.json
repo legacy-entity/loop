@@ -1,8 +1,8 @@
 {
   "name": "loop",
   "description": "loop system",  
-  "version": "0.0.1",
-  "keywords": ["game", "loop", "system"],
+  "version": "0.0.2",
+  "keywords": ["game","loop","system"],
   "dependencies": {
     "component/raf": "*"
   },
