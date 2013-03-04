@@ -1,10 +1,14 @@
 {
   "name": "loop",
-  "description": "loop system",  
-  "version": "0.0.2",
+  "description": "loop system",
+  "version": "0.1.0",
   "keywords": ["game","loop","system"],
   "dependencies": {
     "component/raf": "*"
+  },
+  "development": {
+    "stagas/watch-js": "*",
+    "component/assert": "*"
   },
   "scripts": ["index.js"]
 }

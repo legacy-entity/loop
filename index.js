@@ -1,4 +1,13 @@
 
+/*!
+ *
+ * Loop system.
+ * A fixed timestep loop.
+ *
+ * MIT
+ *
+ */
+
 /**
  * Module dependencies.
  */
@@ -6,159 +15,158 @@
 var raf = require('raf')
 
 /**
- * Returns a loop system using dt (delta time).
+ * Exports.
+ */
+
+module.exports = Loop
+
+/**
+ * Loop system class.
  *
- * @param {float} dt 
- * @return {system} loop
+ * @param {Object} opts
  * @api public
  */
 
-module.exports = function (opts) {
+function Loop (opts) {
   opts = opts || {}
-  opts.dt = opts.dt || 1000/60
+  this.dt = opts.dt || 1000 / 60
+}
 
-  /**
-   * Loop system.
-   */
+/**
+ * Resets loop.
+ *
+ * @api private
+ */
 
-  var loop = {}
+Loop.prototype.reset = function () {
+  this.running = false
+  this.now = 0
+  this.before = 0
+  this.diff = 0
+  this.frame = 0
+  this.timeElapsed = 0
+  this.accumulator = 0
+}
 
-  /**
-   * Init loop.
-   *
-   * @api public
-   */
+/**
+ * Init loop.
+ *
+ * @api public
+ */
 
-  loop.init = function () {
-    this.maxDiff = opts.dt * 5
-    this.reset()
-  }
+Loop.prototype.init = function () {
+  this.maxDiff = this.dt * 5
+  this.reset()
+}
 
-  /**
-   * Resets loop.
-   *
-   * @api private
-   */
+/**
+ * Starts loop.
+ *
+ * @api public
+ */
 
-  loop.reset = function () {
-    this.running = false
-    this.now = 0
-    this.before = 0
-    this.diff = 0
-    this.frame = 0
-    this.timeElapsed = 0
-    this.accumulator = 0
-  }
+Loop.prototype.start = function () {
+  this.running = true
+  // subtracting diff recovers in case of pause
+  this.before = Date.now() - this.diff
+  this.tick()
+}
 
-  /**
-   * Starts loop.
-   *
-   * @api public
-   */
+/**
+ * Pauses loop.
+ *
+ * @api public
+ */
 
-  loop.start = function () {
-    this.running = true
-    // subtracting diff recovers in case of pause
-    this.before = Date.now() - this.diff
-    this.tick()
-  }
+Loop.prototype.pause = function () {
+  this.running = false
+  this.diff = Date.now() - this.before
+}
 
-  /**
-   * Pauses loop.
-   *
-   * @api public
-   */
+/**
+ * Stops loop.
+ *
+ * @api public
+ */
 
-  loop.pause = function () {
-    this.running = false
-    this.diff = Date.now() - this.before
-  }
+Loop.prototype.stop = function () {
+  this.running = false
+  this.reset()
+}
 
-  /**
-   * Stops loop.
-   * 
-   * @api private
-   */
+/**
+ * Ticks loop.
+ *
+ * @return {Loop} this
+ * @api private
+ */
 
-  loop.stop = function () {
-    this.running = false
-    this.reset()
-  }
+Loop.prototype.tick = function () {
+  function tick () {
+    if (this.running) raf(tick)
+    else return
 
-  /**
-   * Ticks loop.
-   *
-   * @return {object} this
-   * @api private
-   */
+    this.frame++
 
-  loop.tick = function () {
-    function tick () {
-      if (this.running) raf(tick)
+    this.now = Date.now()
+    this.diff = this.now - this.before
+    this.before = this.now
 
-      this.frame++
-
-      this.now = Date.now()
-      this.diff = this.now - this.before
-      this.before = this.now
-
-      if (this.diff > this.maxDiff) {
-        this.diff = 0
-      }
-      this.add(this.diff)
-
-      while (this.overflow()) {
-        this.emit('update', this.frame, this.timeElapsed)
-      }
-      this.emit('render', this.alpha())
+    if (this.diff > this.maxDiff) {
+      this.diff = 0
     }
+    this.add(this.diff)
 
-    tick = tick.bind(this)
-    tick()
-    
-    return this
-  }
-
-  /**
-   * Adds to loop accumulator and elapsed.
-   *
-   * @param {number} ms
-   * @return {object} this
-   * @api private
-   */
-
-  loop.add = function (ms) {
-    this.timeElapsed += ms
-    this.accumulator += ms
-    return this
-  }
-
-  /**
-   * Overflow loop.
-   * 
-   * @return {boolean} whether this is an underrun
-   * @api private
-   */
-
-  loop.overflow = function () {
-    if (this.accumulator >= opts.dt) {
-      this.accumulator -= opts.dt
-      return true
+    while (this.overflow()) {
+      this.emit('update', this.frame, this.timeElapsed)
     }
-    return false
+    this.emit('render', this.alpha())
   }
 
-  /**
-   * Calculate alpha. In short, a float of the
-   * loop position between this tick and the next.
-   * 
-   * @return {float} alpha value
-   * @api private
-   */
+  tick = tick.bind(this)
+  tick()
 
-  loop.alpha = function () {
-    return this.accumulator / opts.dt
+  return this
+}
+
+/**
+ * Adds to loop accumulator and elapsed.
+ *
+ * @param {Number} ms
+ * @return {Loop} this
+ * @api private
+ */
+
+Loop.prototype.add = function (ms) {
+  this.timeElapsed += ms
+  this.accumulator += ms
+  return this
+}
+
+/**
+ * Overflow loop.
+ *
+ * @return {Boolean} is_underrun
+ * @api private
+ */
+
+Loop.prototype.overflow = function () {
+  if (this.accumulator >= this.dt) {
+    this.accumulator -= this.dt
+    return true
   }
+  return false
+}
 
-  return loop
+/**
+ * Calculate alpha. In short, a float of the
+ * loop position between this tick and the next
+ * to pass to an interpolate function.
+ *
+ * @return {Number} alpha
+ * @api private
+ */
+
+Loop.prototype.alpha = function () {
+  return this.accumulator / this.dt
 }
